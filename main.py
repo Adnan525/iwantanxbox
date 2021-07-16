@@ -1,3 +1,5 @@
+import time
+
 from bs4 import BeautifulSoup
 import requests
 from selenium import webdriver
@@ -11,6 +13,20 @@ target = "https://www.xbox.com/en-AU/consoles/xbox-series-x#purchase"
 def alertStock(str):
     if "OUT OF STOCK" != str:
         print("================XBOX may be available now, check retailer's website================")
+
+def getRetailer(i):
+    if i == 0:
+        return "Amazon"
+    elif i == 1:
+        return "EB Games"
+    elif i == 2:
+        return "Big W"
+    elif i == 3:
+        return "Harvey Norman"
+    else:
+        return "JB Hi-Fi"
+
+
 
 driver.get(target)
 
@@ -26,6 +42,8 @@ buyGroup = standalonePurch.find_element_by_class_name("buy-group")
 selectRetButton = buyGroup.find_element_by_class_name("c-call-to-action")
 selectRetButton.click()
 
+time.sleep(5)
+
 
 #can jump straight to this instead of running the previous code blocks
 cDialog = driver.find_element_by_class_name("c-dialog")
@@ -35,13 +53,20 @@ lbbody = doc.find_element_by_class_name("lbbody")
 prod1 = lbbody.find_element_by_class_name("prod1")
 
 hatchretailers = prod1.find_elements_by_class_name("hatchretailer")
+
+counter = 0
+
 for retailer in hatchretailers:
+    retailerHardTyped = getRetailer(counter)
+    if counter == 4:
+        counter = 0
     #altTag = retailer.find_element_by_xpath("//span[@class='retlogo']//img").get_attribute("alt")
-    print(retailer.find_element_by_class_name("retlogo"))
+    # print(retailer.find_element_by_class_name("retlogo").find_element_by_xpath("//img").get_attribute('alt'))
     price = retailer.find_element_by_class_name("retprice")
     stock = retailer.find_element_by_class_name("retstockbuy")
     alertStock(stock.text)
-    print("Retalier : retailer, current price : {priceStr}, stock status : {status}".format(priceStr = price.text, status = stock.text))
+    counter+=1
+    print("Retalier : {shop}, current price : {priceStr}, stock status : {status}".format(shop = retailerHardTyped, priceStr = price.text, status = stock.text))
 
 
 
