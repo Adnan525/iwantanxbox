@@ -5,20 +5,19 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from datetime import datetime, timedelta
 import smtplib
-
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import logging
+import patches
 
 PATH = "C:\Program Files (x86)\chromedriver.exe"
 lastSentRetailer = "";
+logging.basicConfig(level=logging.INFO, filename="xboxStock.log")
 
 target = "https://www.xbox.com/en-AU/consoles/xbox-series-x#purchase"
-counter = 0
 
 
 
 def alertStock(retailer, linkURL):
-    print(f"================>XBOX may be available now, check retailer's website, retailer : {retailer}")
+    logging.info(f"================>XBOX may be available now, check retailer's website, retailer : {retailer}")
 
     # if lastSentRetailer != retailer:
     #
@@ -29,7 +28,7 @@ def alertStock(retailer, linkURL):
         smtpmanager.starttls()
         smtpmanager.ehlo()
 
-        email = "emailAddress"
+        email = "email"
         password = "password"
 
         now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -40,7 +39,7 @@ def alertStock(retailer, linkURL):
 
         smtpmanager.login(email, password)
         smtpmanager.sendmail(email, "adnaan525@gmail.com", msg)
-        print("================Email notification sent================")
+        logging.info("================Email notification sent================")
         smtpmanager.quit()
 
 
@@ -76,7 +75,7 @@ def findXBOX():
 
     time.sleep(3)
     # can jump straight to this instead of running the previous code blocks
-    print(f"================> Checked on : {datetime.now().strftime('%H:%M:%S')}")
+    logging.info(f"================> Checked on : {datetime.now().strftime('%H:%M:%S')}")
     cDialog = driver.find_element_by_class_name("c-dialog")
     dialogbox = cDialog.find_element_by_class_name("dialogbox")
     doc = dialogbox.find_element_by_xpath("//div[@role = 'document']")
@@ -100,13 +99,20 @@ def findXBOX():
         #check stock to get the link
         if "OUT OF STOCK" != stock.text:
             link = stock.find_element_by_css_selector("a.c-call-to-action.f-lightweight").get_attribute("href")
-            alertStock(retailerName, link)
+            #patch
+            if "amazon" in retailerName.lower():
+                patchAvail = patches.amazonPatch(link)
+                if patchAvail:
+                    alertStock(retailerName, link)
+
+            else:
+                alertStock(retailerName, link)
         # counter += 1
-        print("Retalier : {shop}, current price : {priceStr}, stock status : {status}"
+        logging.info("Retalier : {shop}, current price : {priceStr}, stock status : {status}"
               .format(shop=retailerName, priceStr=price.text, status=stock.text))
 
     time.sleep(3)
-    print(f"================> Scheduled check on : {datetime.now()+ timedelta(hours=1)}\n")
+    logging.info(f"================> Scheduled check on : {datetime.now()+ timedelta(hours=1)}\n")
     driver.quit()
 
 
@@ -129,3 +135,7 @@ def findXBOX():
 #
 #     else:
 #         textStyling(f"Connection to URl: {target} could not be established, found status {conStatus.status_code}")
+
+
+#run the program instant
+# findXBOX()
